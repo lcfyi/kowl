@@ -206,6 +206,8 @@ const apiStore = {
     topicDocumentation: new Map<string, TopicDocumentation>(),
     topicPermissions: new Map<string, TopicPermissions | null>(),
     topicPartitions: new Map<string, Partition[] | null>(), // null = not allowed to view partitions of this config
+    topicPartitionErrors: new Map<string, Array<{id: number, partitionError: string}>>(),
+    topicWatermarksErrors: new Map<string, Array<{id: number, waterMarksError: string}>>(),
     topicConsumers: new Map<string, TopicConsumer[]>(),
     topicAcls: new Map<string, AclResponse | null>(),
 
@@ -507,16 +509,17 @@ const apiStore = {
         cachedApiRequest<GetPartitionsResponse | null>(`./api/topics/${topicName}/partitions`, force)
             .then(response => {
                 if (response?.partitions) {
-                    let partitionErrors = 0, waterMarkErrors = 0;
+                    const partitionErrors: Array<{id: number, partitionError: string}> = [], waterMarksErrors: Array<{id: number, waterMarksError: string}> = [];
+
 
                     // Add some local/cached properties to make working with the data easier
                     for (const p of response.partitions) {
                         // topicName
                         p.topicName = topicName;
 
-                        if (p.partitionError) partitionErrors++;
-                        if (p.waterMarksError) waterMarkErrors++;
-                        if (partitionErrors || waterMarkErrors) continue;
+                        if (p.partitionError) partitionErrors.push({id: p.id, partitionError: p.partitionError});
+                        if (p.waterMarksError) waterMarksErrors.push({id: p.id, waterMarksError: p.waterMarksError});
+                        if (partitionErrors.length || waterMarksErrors.length) continue;
 
                         // replicaSize
                         const validLogDirs = p.partitionLogDirs.filter(e => (e.error == null || e.error == "") && e.size >= 0);
@@ -524,11 +527,15 @@ const apiStore = {
                         p.replicaSize = replicaSize >= 0 ? replicaSize : 0;
                     }
 
-                    if (partitionErrors == 0 && waterMarkErrors == 0) {
+                    if (partitionErrors.length == 0 && waterMarksErrors.length == 0) {
                         // Set partitions
+                        this.topicPartitionErrors.delete(topicName)
+                        this.topicWatermarksErrors.delete(topicName)
                         this.topicPartitions.set(topicName, response.partitions);
                     } else {
-                        console.error(`refreshPartitionsForTopic: response has partition errors (t=${topicName} p=${partitionErrors}, w=${waterMarkErrors})`)
+                        this.topicPartitionErrors.set(topicName, partitionErrors)
+                        this.topicWatermarksErrors.set(topicName, waterMarksErrors)
+                        console.error(`refreshPartitionsForTopic: response has partition errors (t=${topicName} p=${partitionErrors.length}, w=${waterMarksErrors.length})`)
                     }
 
                 } else {
