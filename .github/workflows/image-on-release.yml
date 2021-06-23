@@ -22,10 +22,12 @@ jobs:
         run: echo "::set-output name=time::$(date +%s)"
         id: set_timestamp
 
-      - name: Login to Quay
-        env:
-          QUAY_ENCRYPTED_PASS: ${{ secrets.QUAY_ENCRYPTED_PASS }}
-        run: docker login quay.io -u=cloudhut+github_push -p=${QUAY_ENCRYPTED_PASS}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker Image
         run:
@@ -33,9 +35,9 @@ jobs:
           --build-arg "KOWL_GIT_SHA=${GITHUB_SHA}"
           --build-arg "KOWL_GIT_REF=${{ steps.extract_ref.outputs.ref }}"
           --build-arg "KOWL_TIMESTAMP=${{ steps.set_timestamp.outputs.time }}"
-          -t quay.io/cloudhut/kowl:${{ steps.extract_ref.outputs.ref }}
+          -t ghcr.io/lcfyi/kowl:${{ steps.extract_ref.outputs.ref }}
           .
 
       - name: Push Image
         run: |
-          docker push quay.io/cloudhut/kowl:${{ steps.extract_ref.outputs.ref }}
+          docker push ghcr.io/lcfyi/kowl:${{ steps.extract_ref.outputs.ref }}
