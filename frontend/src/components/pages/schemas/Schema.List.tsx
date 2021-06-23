@@ -110,7 +110,7 @@ class SchemaList extends PageComponent<{}> {
                         rowClassName={() => 'hoverLink'}
                         rowKey="name"
                         onRow={({ name }) => ({
-                            onClick: () => appGlobal.history.push(`/schema-registry/${name}`),
+                            onClick: () => appGlobal.history.push(`/schema-registry/${encodeURIComponent(name)}`),
                         })}
                         columns={[
                             { title: 'Name', dataIndex: 'name', sorter: sortField('name'), defaultSortOrder: 'ascend' },

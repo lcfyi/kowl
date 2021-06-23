@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
-
+	"net/url"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -153,8 +153,9 @@ type SchemaVersionedResponse struct {
 // 		the string “latest”, which returns the last registered schema under the specified subject.
 //		Note that there may be a new latest schema that gets registered right after this request is served.
 func (c *Client) GetSchemaBySubject(subject string, version string) (*SchemaVersionedResponse, error) {
+	decodedVal, err := url.QueryUnescape(subject)
 	res, err := c.client.R().SetResult(&SchemaVersionedResponse{}).SetPathParams(map[string]string{
-		"subjects": subject,
+		"subjects": decodedVal,
 		"version":  version,
 	}).Get("/subjects/{subjects}/versions/{version}")
 	if err != nil {

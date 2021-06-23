@@ -30,9 +30,9 @@ class SchemaDetailsView extends PageComponent<SchemaDetailsProps> {
         const subjectName = this.props.subjectName;
         const version = this.props.query.version;
 
-        p.title = subjectName;
+        p.title = decodeURIComponent(subjectName);
         p.addBreadcrumb('Schema Registry', '/schema-registry');
-        p.addBreadcrumb(subjectName, `/schema-registry/${subjectName}?version=${version}`);
+        p.addBreadcrumb(decodeURIComponent(subjectName), `/schema-registry/${subjectName}?version=${version}`);
         this.refreshData(false);
         appGlobal.onRefresh = () => this.refreshData(true);
     }
@@ -66,7 +66,7 @@ class SchemaDetailsView extends PageComponent<SchemaDetailsProps> {
             <motion.div {...animProps} key={'b'} style={{ margin: '0 1rem' }}>
                 <Card>
                     <Row>
-                        <Statistic title="Subject" value={this.props.subjectName}></Statistic>
+                        <Statistic title="Subject" value={decodeURIComponent(this.props.subjectName)}></Statistic>
                         <Statistic title="Schema ID" value={schemaId}></Statistic>
                         <Statistic title="Version" value={version}></Statistic>
                         <Statistic title="Compatibility" value={compatibility}></Statistic>
