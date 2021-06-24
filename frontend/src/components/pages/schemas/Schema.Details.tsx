@@ -12,6 +12,10 @@ import { KowlJsonView } from '../../misc/KowlJsonView';
 import { sortField } from '../../misc/common';
 import { SchemaField } from '../../../state/restInterfaces';
 import { uiSettings } from '../../../state/ui';
+import Prism, { languages as PrismLanguages } from "prismjs";
+import 'prismjs/components/prism-protobuf';
+import 'prismjs/components/prism-json';
+import Editor from 'react-simple-code-editor';
 
 export interface SchemaDetailsProps {
     subjectName: string;
@@ -62,6 +66,10 @@ class SchemaDetailsView extends PageComponent<SchemaDetailsProps> {
 
         const defaultVersion = this.props.query.version ?? (versions.length > 0 ? versions[versions.length - 1] : 'latest');
 
+        const schemaString = (api.schemaDetails || {schema: "No schema."}).schema.toString();
+
+        const languageType = (schemaString.match(/syntax[\s]*=[\s]*\"proto(2|3)\"/g)) ? "protobuf" : "json";
+
         return (
             <motion.div {...animProps} key={'b'} style={{ margin: '0 1rem' }}>
                 <Card>
@@ -105,7 +113,7 @@ class SchemaDetailsView extends PageComponent<SchemaDetailsProps> {
                     <div style={{ marginBottom: '1.5em' }}>
                         <OptionGroup label=''
                             options={{
-                                "Show Fields": 'fields',
+                                "Show raw Schema": 'fields',
                                 "Show raw JSON": 'json',
                             }}
                             value={uiSettings.schemaDetails.viewMode}
@@ -129,23 +137,41 @@ class SchemaDetailsView extends PageComponent<SchemaDetailsProps> {
                         }
 
                         {uiSettings.schemaDetails.viewMode == 'fields' &&
-                            <Table
-                                size="small"
-                                columns={[
-                                    { title: 'Name', dataIndex: 'name', className: 'whiteSpaceDefault', }, // sorter: sortField('name')
-                                    { title: 'Type', dataIndex: 'type', className: 'whiteSpaceDefault', render: renderSchemaType }, //  sorter: sortField('type'),
-                                    { title: 'Default', dataIndex: 'default', className: 'whiteSpaceDefault' },
-                                    { title: 'Documentation', dataIndex: 'doc', className: 'whiteSpaceDefault' },
-                                ]}
-                                rowKey="name"
-                                dataSource={fields}
-                                pagination={false}
+                            // TODO this is just a stopgap to display the raw schema
+                            <Editor
+                                value={schemaString}
+                                onValueChange={() => undefined}
+                                highlight={code => Prism.highlight(code, PrismLanguages[languageType], languageType)}
+                                padding={10}
                                 style={{
-                                    maxWidth: '100%',
-                                    marginTop: '1.5rem',
+                                    fontFamily: '"Fira code", "Fira Mono", monospace',
+                                    fontSize: 12,
+                                    minWidth: '300px',
+                                    minHeight: '200px',
+                                    border: 'solid thin lightgray',
+                                    borderRadius: '.25em',
+                                    outline: 'none',
                                     marginBottom: '1.5rem',
                                 }}
+                                textareaClassName='code-editor-textarea'
                             />
+                            // <Table
+                            //     size="small"
+                            //     columns={[
+                            //         { title: 'Name', dataIndex: 'name', className: 'whiteSpaceDefault', }, // sorter: sortField('name')
+                            //         { title: 'Type', dataIndex: 'type', className: 'whiteSpaceDefault', render: renderSchemaType }, //  sorter: sortField('type'),
+                            //         { title: 'Default', dataIndex: 'default', className: 'whiteSpaceDefault' },
+                            //         { title: 'Documentation', dataIndex: 'doc', className: 'whiteSpaceDefault' },
+                            //     ]}
+                            //     rowKey="name"
+                            //     dataSource={fields}
+                            //     pagination={false}
+                            //     style={{
+                            //         maxWidth: '100%',
+                            //         marginTop: '1.5rem',
+                            //         marginBottom: '1.5rem',
+                            //     }}
+                            // />
                         }
 
                     </div>
